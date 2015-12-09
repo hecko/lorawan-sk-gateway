@@ -20,7 +20,7 @@ parser = argparse.ArgumentParser(description = 'Process SQLite database and send
 parser.add_argument('-v', '--verbose', action='store_true', help="Print debug to terminal, not just to log file")
 args = parser.parse_args()
 
-url="http://46.101.244.22:8888/form"
+url="http://46.101.155.72:8888/put"
 
 db_file_path = '/tmp/env_monitoring.db'
 
@@ -53,20 +53,27 @@ while True:
             print "Qualifying rows to be sent to cloud:"
             pp.pprint(rows)
         wret = requests.post(url, data=json.dumps(rows, encoding='latin-1'), timeout=7)
-        if args.verbose:
-            print("Cloud batch return code: " + str(wret.status_code))
-        for row in json.loads(wret.content):
-            rowids.append((row['response']['status'], row['request']['rowid']))
     except Exception,e:
         print(str(int(time.time())) + ' ERROR sending data to ' + url + " -> " + str(e))
+        time.sleep(10)
+        continue
 
-    if rowids:
+    try:
+        for row in json.loads(wret.content):
+            rowids.append((row['response']['status'], row['request']['rowid']))
+    except Exception as e:
+        print str(e)
+
+    if wret.status_code == 200:
         if args.verbose:
             print("Saving: " + str(rowids))
-        c.executemany("UPDATE data SET state=? WHERE rowid=?", rowids)
+        #c.executemany("UPDATE data SET state=? WHERE rowid=?", rowids)
+        print "All OK"
         conn.commit()
+    else:
+        print("Cloud batch error return code: " + str(wret.status_code))
 
     conn.close()
-    time.sleep(1)
+    time.sleep(10)
 
 connection.close()
