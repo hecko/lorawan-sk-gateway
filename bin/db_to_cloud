@@ -20,7 +20,7 @@ parser = argparse.ArgumentParser(description = 'Process SQLite database and send
 parser.add_argument('-v', '--verbose', action='store_true', help="Print debug to terminal, not just to log file")
 args = parser.parse_args()
 
-url="http://lorawan.sk/api/put_post_m"
+url="http://46.101.244.22:8888/form"
 
 db_file_path = '/tmp/env_monitoring.db'
 
