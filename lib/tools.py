@@ -7,12 +7,12 @@ import __main__
 import subprocess
 import ConfigParser
 
-def insert_to_db(blob):
+def insert_to_db(data):
     db_file_path = '/tmp/env_monitoring.db'
     conn = sqlite3.connect(db_file_path, timeout=5)
     c = conn.cursor()
     try:
-      new_data = (int(time.time()), 'lora', gw_serial(), blob, 0)
+      new_data = (int(time.time()), 'lora', gw_serial(), data['payload'], 0)
       if __main__.args.verbose:
           print new_data
       c.execute("INSERT INTO data (timestamp, source, gateway_serial, payload, state) VALUES (?,?,?,?,?)", (new_data))
