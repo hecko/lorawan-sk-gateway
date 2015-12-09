@@ -1,0 +1,56 @@
+#!/usr/bin/python
+
+import os
+import re
+import sys
+import time
+import serial
+import struct
+import logging
+import sqlite3
+import argparse
+from tendo import singleton
+
+sys.path.append(os.path.dirname(sys.argv[0]) + '/../lib')
+import tools
+
+me = singleton.SingleInstance()
+
+script_description = "Read serial interface and write data to SQLite database"
+
+parser = argparse.ArgumentParser(description=script_description)
+parser.add_argument('-v', '--verbose', action='store_true', help="Be verbose")
+parser.add_argument('-d', '--debug', action='store_true', help="Noisy debug mode")
+parser.add_argument('--no_db_test', action='store_true', help="Do everything but store to database")
+parser.add_argument('--no_serial_test', action='store_true', help="No serial interface for data input - just test other bits of the code with static data")
+args = parser.parse_args()
+
+if args.debug:
+    args.verbose = True
+
+if not args.no_serial_test:
+    serial = '/dev/ttyAMA0'
+    baud = 115200
+    try:
+        ser = serial.Serial(serial, baud)
+    except Exception as e:
+        raise Exception("Unable to open serial " + serial + " " + str(baud) + ": " + str(e))
+
+while True:
+    #out = ser.readline()
+    time.sleep(1)
+    #out = re.split('\\n|\\r', out)[0]
+    out = "6173646667686a6b6c706f697573|-91"
+    p = out.strip().split('|')
+    if args.debug:
+        print(p)
+
+    payload = str(p[0])
+    rssi = int(p[1])
+
+    if not args.no_db_test:
+        tools.insert_to_db(payload)
+
+    if args.verbose:
+        print "New datapoint in database"
+    out = ''

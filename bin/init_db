@@ -1,0 +1,42 @@
+#!/usr/bin/python
+
+import os
+import sys
+import sqlite3
+import argparse
+
+sys.path.append(os.path.dirname(sys.argv[0]) + '/../lib')
+
+script_description = "Initialize gateways's SQL database for data buffering"
+
+parser = argparse.ArgumentParser(description=script_description)
+parser.add_argument('-v', '--verbose', action='store_true',
+                                       help="Be more verbose")
+parser.add_argument('-f', '--force',   action='store_true',
+                                       help="Force re-creation of database - this will delete the old database!")
+args = parser.parse_args()
+
+db_file_path = '/tmp/env_monitoring.db'
+
+try:
+    os.remove(db_file_path)
+except OSError as e:
+    if e.errno != 2:
+        raise
+
+print("Creating new db as " + db_file_path)
+path = os.path.dirname(db_file_path)
+
+if not os.path.exists(path):
+  print('Making directory structure: ' + path)
+  os.makedirs(path)
+
+conn = sqlite3.connect(db_file_path)
+c = conn.cursor()
+print "Creating main data buffer table"
+c.execute('''CREATE TABLE data (timestamp integer, source integer, gateway_serial text, payload text, state integer)''')
+print "Adding indexes"
+c.execute('''CREATE UNIQUE INDEX IF NOT EXISTS datapoint ON data ( timestamp, payload )''')
+c.execute('''CREATE INDEX IF NOT EXISTS state ON data ( state )''')
+conn.commit()
+conn.close()
