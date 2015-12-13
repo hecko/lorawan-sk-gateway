@@ -13,6 +13,8 @@ import logging
 import argparse
 from tendo import singleton
 
+#logging.basicConfig(level=logging.DEBUG)
+
 sys.path.append(os.path.dirname(sys.argv[0]) + '/../lib')
 
 me = singleton.SingleInstance()
@@ -32,10 +34,20 @@ def dict_factory(cursor, row):
         d[col[0]] = row[idx]
     return d
 
-credentials = pika.PlainCredentials('test', 'myonetest')
-connection = pika.BlockingConnection(pika.ConnectionParameters(host=mq_host, virtual_host="iot", credentials=credentials))
-channel = connection.channel()
-channel.queue_declare(queue='hello')
+while True:
+    try:
+        print("Connecting to the RabbitMQ server...")
+        credentials = pika.PlainCredentials('test', 'myonetest')
+        connection = pika.BlockingConnection(pika.ConnectionParameters(host=mq_host, virtual_host="iot", credentials=credentials))
+        channel = connection.channel()
+        channel.basic_qos(prefetch_count=1)
+        channel.queue_declare(queue='hello', durable=True)
+        break
+    except Exception as e:
+        print "Unable to connect!"
+        print str(e)
+        time.sleep(3)
+        continue
 
 serial_port = '/dev/ttyAMA0'
 baud = 115200
@@ -56,18 +68,28 @@ while True:
         data['payload'] = str(p[0]).replace(' ', '')
         data['rssi'] = int(p[1])
         data['gw_serial'] = gw_serial
-        data['gw_timestamp'] = time.time()
+        data['gw_timestamp'] = time.strftime('%Y-%m-%d %H:%M:%S')
     except Exception as e:
         print(str(e))
+        continue
+
+    if not connection.is_open:
+        print "Connection not open!"
+        connection.connect()
         continue
 
     if args.verbose:
         pp.pprint(data)
 
     try:
-        channel.basic_publish(exchange='',
+        channel.basic_publish(
+                      exchange='',
                       routing_key='hello',
-                      body=json.dumps(data))
+                      body=json.dumps(data),
+                      properties=pika.BasicProperties(
+                          delivery_mode=2
+                          )
+                      )
     except Exception,e:
         print(str(int(time.time())) + ' ERROR sending data to ' + mq_host + " -> " + str(e))
         continue
