@@ -20,7 +20,7 @@ parser = argparse.ArgumentParser(description = 'Process SQLite database and send
 parser.add_argument('-v', '--verbose', action='store_true', help="Print debug to terminal, not just to log file")
 args = parser.parse_args()
 
-url="http://46.101.155.72:8888/put"
+url="http://api.lorawan.sk/put"
 
 db_file_path = '/tmp/env_monitoring.db'
 
@@ -55,10 +55,11 @@ while True:
         wret = requests.post(url, data=json.dumps(rows, encoding='latin-1'), timeout=7)
     except Exception,e:
         print(str(int(time.time())) + ' ERROR sending data to ' + url + " -> " + str(e))
-        time.sleep(10)
+        time.sleep(5)
         continue
 
     try:
+        print(wret.content)
         for row in json.loads(wret.content):
             rowids.append((row['response']['status'], row['request']['rowid']))
     except Exception as e:
@@ -74,6 +75,6 @@ while True:
         print("Cloud batch error return code: " + str(wret.status_code))
 
     conn.close()
-    time.sleep(10)
+    time.sleep(5)
 
 connection.close()

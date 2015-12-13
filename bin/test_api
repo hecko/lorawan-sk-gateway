@@ -19,8 +19,8 @@ parser = argparse.ArgumentParser(description = 'Get some data from web API')
 parser.add_argument('-v', '--verbose', action='store_true', help="Print debug to terminal, not just to log file")
 args = parser.parse_args()
 
-url="http://46.101.155.72:8888/api"
+url="http://api.lorawan.sk"
 
 wret = requests.get(url, timeout=7)
 print "Status code: " + str(wret.status_code)
-pprint(json.loads(wret.content))
+pprint(wret.content)

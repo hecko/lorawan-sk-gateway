@@ -31,7 +31,7 @@ if args.debug:
 
 if not args.no_serial_test:
     serial_port = '/dev/ttyAMA0'
-    baud = 57600 
+    baud = 115200
     try:
         ser = serial.Serial(serial_port, baud)
     except Exception as e:

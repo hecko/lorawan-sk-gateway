@@ -1,0 +1,75 @@
+#!/usr/bin/python
+
+import re
+import os
+import sys
+import time
+import json
+import pika
+import serial
+import pprint
+import sqlite3
+import logging
+import argparse
+from tendo import singleton
+
+sys.path.append(os.path.dirname(sys.argv[0]) + '/../lib')
+
+me = singleton.SingleInstance()
+pp = pprint.PrettyPrinter(indent=4)
+
+parser = argparse.ArgumentParser(description = 'Serial to cloud middleware.')
+parser.add_argument('-v', '--verbose', action='store_true', help="Print debug to terminal, not just to log file")
+args = parser.parse_args()
+
+mq_host      = "lorawan.sk"
+gw_serial    = 1
+db_file_path = '/tmp/env_monitoring.db'
+
+def dict_factory(cursor, row):
+    d = {}
+    for idx, col in enumerate(cursor.description):
+        d[col[0]] = row[idx]
+    return d
+
+credentials = pika.PlainCredentials('test', 'myonetest')
+connection = pika.BlockingConnection(pika.ConnectionParameters(host=mq_host, virtual_host="iot", credentials=credentials))
+channel = connection.channel()
+channel.queue_declare(queue='hello')
+
+serial_port = '/dev/ttyAMA0'
+baud = 115200
+try:
+    ser = serial.Serial(serial_port, baud)
+except Exception as e:
+    raise Exception("Unable to open serial " + serial + " " + str(baud) + ": " + str(e))
+
+while True:
+    out = ser.readline()
+    if args.verbose:
+        print out
+    out = re.split('\\n|\\r', out)[0]
+    p = out.strip().split('|')
+
+    try:
+        data = {}
+        data['payload'] = str(p[0]).replace(' ', '')
+        data['rssi'] = int(p[1])
+        data['gw_serial'] = gw_serial
+        data['gw_timestamp'] = time.time()
+    except Exception as e:
+        print(str(e))
+        continue
+
+    if args.verbose:
+        pp.pprint(data)
+
+    try:
+        channel.basic_publish(exchange='',
+                      routing_key='hello',
+                      body=json.dumps(data))
+    except Exception,e:
+        print(str(int(time.time())) + ' ERROR sending data to ' + mq_host + " -> " + str(e))
+        continue
+
+connection.close()
