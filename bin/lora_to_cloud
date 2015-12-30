@@ -6,6 +6,7 @@ import sys
 import time
 import json
 import pika
+import struct
 import serial
 import pprint
 import sqlite3
@@ -38,7 +39,13 @@ while True:
     try:
         print("Connecting to the RabbitMQ server...")
         credentials = pika.PlainCredentials('test', 'myonetest')
-        connection = pika.BlockingConnection(pika.ConnectionParameters(host=mq_host, virtual_host="iot", credentials=credentials))
+        connection = pika.BlockingConnection(
+            pika.ConnectionParameters(
+                host=mq_host,
+                virtual_host="iot", 
+                credentials=credentials,
+            )
+        )
         channel = connection.channel()
         channel.basic_qos(prefetch_count=1)
         channel.queue_declare(queue='hello', durable=True)
@@ -64,21 +71,32 @@ while True:
         print out
     out = re.split('\\n|\\r', out)[0]
     p = out.strip().split('|')
+    pl = p[0].replace(' ', '').decode('hex')
 
     try:
+
         data = {}
-        data['payload'] = str(p[0]).replace(' ', '')
+        data['payload'] = str(p[0]).replace(' ', '') 
         data['rssi'] = int(p[1])
         data['gw_serial'] = gw_serial
         data['gw_timestamp'] = time.strftime('%Y-%m-%d %H:%M:%S')
+
+        data['parsed'] = {}
+        data['parsed']['serial'] = struct.unpack('L', pl[3:7])[0] 
+        data['parsed']['key'] = struct.unpack('H', pl[1:3])[0] 
+        if data['parsed']['key'] in ( 1, 2 ):
+            data['parsed']['value'] = struct.unpack('f', pl[7:11])[0] 
+        else:
+            data['parsed']['value'] = "dont know how to parse this key type"
+
     except Exception as e:
         print(str(e))
         continue
 
-    if not connection.is_open:
-        print "Connection not open!"
-        connection.connect()
-        continue
+#    if not connection.is_open:
+#        print "Connection not open!"
+#        connection.connect()
+#        continue
 
     if args.verbose:
         pp.pprint(data)
