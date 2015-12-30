@@ -42,6 +42,7 @@ while True:
         channel = connection.channel()
         channel.basic_qos(prefetch_count=1)
         channel.queue_declare(queue='hello', durable=True)
+        print("...connected")
         break
     except Exception as e:
         print "Unable to connect!"
@@ -56,6 +57,7 @@ try:
 except Exception as e:
     raise Exception("Unable to open serial " + serial + " " + str(baud) + ": " + str(e))
 
+print("Starting main loop")
 while True:
     out = ser.readline()
     if args.verbose:
