@@ -6,9 +6,8 @@ import sys
 import time
 import json
 import pika
-import struct
 import serial
-import pprint
+from pprint import pprint
 import sqlite3
 import logging
 import argparse
@@ -19,10 +18,9 @@ from tendo import singleton
 sys.path.append(os.path.dirname(sys.argv[0]) + '/../lib')
 
 me = singleton.SingleInstance()
-pp = pprint.PrettyPrinter(indent=4)
 
 parser = argparse.ArgumentParser(description = 'Serial to cloud middleware.')
-parser.add_argument('-v', '--verbose', action='store_true', help="Print debug to terminal, not just to log file")
+parser.add_argument('-v', '--verbose', action='store_true', help="Be verbose")
 args = parser.parse_args()
 
 mq_host      = "lorawan.sk"
@@ -67,27 +65,33 @@ except Exception as e:
 print("Starting main loop")
 while True:
     out = ser.readline()
-    if args.verbose:
-        print out
     out = re.split('\\n|\\r', out)[0]
+    if args.verbose:
+        print "Received data from serial interface: " + out
     p = out.strip().split('|')
-    pl = p[0].replace(' ', '').decode('hex')
+
+    if args.verbose:
+        pprint(p)
+
+    if p[0] == 'debug':
+        print "Skipping debug line from LoRa module\n\n"
+        continue
+
+    try:
+        pl = p[1].replace(' ', '').decode('hex')
+    except Exception as e:
+        print str(e)
+        print
+        continue
 
     try:
 
         data = {}
-        data['payload'] = str(p[0]).replace(' ', '') 
-        data['rssi'] = int(p[1])
+        data['payload'] = str(p[1]).replace(' ', '')
+        data['rssi'] = int(p[2])
+
         data['gw_serial'] = gw_serial
         data['gw_timestamp'] = time.strftime('%Y-%m-%d %H:%M:%S')
-
-        data['parsed'] = {}
-        data['parsed']['serial'] = struct.unpack('L', pl[3:7])[0] 
-        data['parsed']['key'] = struct.unpack('H', pl[1:3])[0] 
-        if data['parsed']['key'] in ( 1, 2 ):
-            data['parsed']['value'] = struct.unpack('f', pl[7:11])[0] 
-        else:
-            data['parsed']['value'] = "dont know how to parse this key type"
 
     except Exception as e:
         print(str(e))
@@ -99,7 +103,7 @@ while True:
 #        continue
 
     if args.verbose:
-        pp.pprint(data)
+        pprint(data)
 
     try:
         channel.basic_publish(
@@ -110,6 +114,7 @@ while True:
                           delivery_mode=2
                           )
                       )
+
     except Exception,e:
         print(str(int(time.time())) + ' ERROR sending data to ' + mq_host + " -> " + str(e))
         continue
