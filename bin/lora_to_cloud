@@ -40,7 +40,7 @@ while True:
         connection = pika.BlockingConnection(
             pika.ConnectionParameters(
                 host=mq_host,
-                virtual_host="iot", 
+                virtual_host="iot",
                 credentials=credentials,
             )
         )
@@ -74,7 +74,8 @@ while True:
         pprint(p)
 
     if p[0] == 'debug':
-        print "Skipping debug line from LoRa module\n\n"
+        if args.verbose:
+            print "Skipping debug line from LoRa module\n"
         continue
 
     try:
@@ -117,6 +118,7 @@ while True:
 
     except Exception,e:
         print(str(int(time.time())) + ' ERROR sending data to ' + mq_host + " -> " + str(e))
-        continue
+        connection.close()
+        raise
 
 connection.close()
