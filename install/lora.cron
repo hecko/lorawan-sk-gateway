@@ -1,0 +1,1 @@
+* *    * * *    root    /opt/lorawan-sk-gateway/bin/lora_to_cloud > /dev/null 2>&1
