@@ -6,6 +6,7 @@ import sys
 import time
 import json
 import pika
+import pytz
 import serial
 from pprint import pprint
 import sqlite3
@@ -93,7 +94,8 @@ while True:
         data['rssi'] = int(p[2])
 
         data['gw_serial'] = gw_serial
-        data['gw_timestamp'] = str(datetime.utcnow().isoformat())
+        # this way the datetime object is timezone-aware
+        data['gw_timestamp'] = str(datetime.now(pytz.utc).isoformat())
 
     except Exception as e:
         print(str(e))
