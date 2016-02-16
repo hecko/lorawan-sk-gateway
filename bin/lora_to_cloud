@@ -111,8 +111,8 @@ while True:
 
     try:
         channel.basic_publish(
-                      exchange='',
-                      routing_key='hello',
+                      exchange='iot',
+                      routing_key='',
                       body=json.dumps(data),
                       properties=pika.BasicProperties(
                           delivery_mode=2
