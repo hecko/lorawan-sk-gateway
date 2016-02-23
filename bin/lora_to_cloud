@@ -26,7 +26,6 @@ parser.add_argument('-v', '--verbose', action='store_true', help="Be verbose")
 args = parser.parse_args()
 
 mq_host      = "lorawan.sk"
-gw_serial    = 1
 db_file_path = '/tmp/env_monitoring.db'
 
 def dict_factory(cursor, row):
@@ -84,19 +83,21 @@ while True:
         pl = p[1].replace(' ', '').decode('hex')
     except Exception as e:
         print str(e)
-        print
         continue
 
-    try:
+    data = {}
 
-        data = {}
+    try:
+        data['gw_serial'] = int(p[3])
+    except Exception as e:
+        print(str(e))
+        data['gw_serial'] = 0
+
+    try:
         data['payload'] = str(p[1]).replace(' ', '')
         data['rssi'] = int(p[2])
-
-        data['gw_serial'] = gw_serial
         # this way the datetime object is timezone-aware
         data['gw_timestamp'] = str(datetime.now(pytz.utc).isoformat())
-
     except Exception as e:
         print(str(e))
         continue
