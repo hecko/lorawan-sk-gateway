@@ -6,5 +6,6 @@ LoRa gateway based on Raspberry PI and custom RFM2PI LoRa module
 
     apt-get git vim python-pip
     pip install tendo
+    pip install pyserial
     cd /opt
     git clone https://github.com/lorawan-sk/lorawan-sk-gateway.git moire_iot_gateway
