@@ -4,7 +4,6 @@ import os
 import re
 import sys
 import time
-import serial
 from pprint import pprint
 import struct
 import logging
@@ -30,6 +29,7 @@ if args.debug:
     args.verbose = True
 
 if not args.no_serial_test:
+    import serial
     serial_port = '/dev/ttyAMA0'
     baud = 115200
     try:
@@ -37,8 +37,14 @@ if not args.no_serial_test:
     except Exception as e:
         raise Exception("Unable to open serial " + serial + " " + str(baud) + ": " + str(e))
 
+if args.verbose:
+    print("Started. Waiting for LoRa data")
+
 while True:
-    out = ser.readline()
+    if args.no_serial_test:
+        out = "test serial input - static"
+    else:
+        out = ser.readline()
     if args.debug:
         print out
     out = re.split('\\n|\\r', out)[0]
@@ -51,11 +57,10 @@ while True:
         data['payload'] = str(p[0]).replace(' ', '')
         data['rssi'] = int(p[1])
     except Exception as e:
-        print(str(e))
+        print(str(e) + ": " + out)
         continue
 
     if args.verbose:
-        print data['payload'].decode('hex')
         pprint(data)
 
     if not args.no_db_test:
