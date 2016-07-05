@@ -8,14 +8,14 @@ import subprocess
 import ConfigParser
 
 def insert_to_db(data):
-    db_file_path = '/tmp/env_monitoring.db'
+    db_file_path = '/var/lib/env_monitoring.sqlite'
     conn = sqlite3.connect(db_file_path, timeout=5)
     c = conn.cursor()
     try:
-      new_data = (int(time.time()), 'lora', gw_serial(), data['payload'], 0)
+      new_data = (int(time.time()), 'lora', gw_serial(), data['payload'], 0, data['rssi'], data['node_id'])
       if __main__.args.verbose:
           print new_data
-      c.execute("INSERT INTO data (timestamp, source, gateway_serial, payload, state) VALUES (?,?,?,?,?)", (new_data))
+      c.execute("INSERT INTO data (timestamp, source, gateway_serial, payload, state, rssi, node_id) VALUES (?,?,?,?,?,?,?)", (new_data))
       conn.commit()
       conn.close()
     except Exception as e:

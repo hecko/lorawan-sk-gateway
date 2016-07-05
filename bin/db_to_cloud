@@ -4,9 +4,8 @@ import os
 import sys
 import time
 import json
-import pprint
+from pprint import pprint
 import sqlite3
-import logging
 import argparse
 import requests
 from tendo import singleton
@@ -14,15 +13,14 @@ from tendo import singleton
 sys.path.append(os.path.dirname(sys.argv[0]) + '/../lib')
 
 me = singleton.SingleInstance()
-pp = pprint.PrettyPrinter(indent=4)
 
 parser = argparse.ArgumentParser(description = 'Process SQLite database and send data to cloud.')
-parser.add_argument('-v', '--verbose', action='store_true', help="Print debug to terminal, not just to log file")
+parser.add_argument('-v', '--verbose', action='store_true', help="Be verbose")
 args = parser.parse_args()
 
-url="http://api.lorawan.sk/put"
+url="http://lorawan.sk:8000/api/points/save"
 
-db_file_path = '/tmp/env_monitoring.db'
+db_file_path = '/var/lib/env_monitoring.sqlite'
 
 def dict_factory(cursor, row):
     d = {}
@@ -39,10 +37,10 @@ while True:
     if args.verbose:
         print("Selecting data from SQL to process...")
 
-    rows = c.execute("SELECT rowid,* FROM data WHERE state=0 LIMIT 2").fetchall()
+    rows = c.execute("SELECT rowid,* FROM data WHERE state=0 LIMIT 20").fetchall()
 
     if not rows:
-        log.debug("No data ... sleeping for 3 seconds")
+        print("No data ... sleeping for 3 seconds")
         time.sleep(3)
         continue
 
@@ -51,7 +49,7 @@ while True:
     try:
         if args.verbose:
             print "Qualifying rows to be sent to cloud:"
-            pp.pprint(rows)
+            pprint(rows)
         wret = requests.post(url, data=json.dumps(rows, encoding='latin-1'), timeout=7)
     except Exception,e:
         print(str(int(time.time())) + ' ERROR sending data to ' + url + " -> " + str(e))
@@ -59,16 +57,18 @@ while True:
         continue
 
     try:
-        print(wret.content)
+        # print("Response: " + wret.content)
+        print("JSON decoded:")
+        pprint(json.loads(wret.content))
         for row in json.loads(wret.content):
-            rowids.append((row['response']['status'], row['request']['rowid']))
+            rowids.append((row['status'], row['rowid']))
     except Exception as e:
         print str(e)
 
     if wret.status_code == 200:
         if args.verbose:
             print("Saving: " + str(rowids))
-        #c.executemany("UPDATE data SET state=? WHERE rowid=?", rowids)
+        c.executemany("UPDATE data SET state=? WHERE rowid=?", rowids)
         print "All OK"
         conn.commit()
     else:

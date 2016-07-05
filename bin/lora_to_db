@@ -35,30 +35,41 @@ if not args.no_serial_test:
     try:
         ser = serial.Serial(serial_port, baud)
     except Exception as e:
-        raise Exception("Unable to open serial " + serial + " " + str(baud) + ": " + str(e))
+        raise Exception("Unable to open serial " + str(serial_port) + " " + str(baud) + ": " + str(e))
 
 if args.verbose:
     print("Started. Waiting for LoRa data")
 
 while True:
+    out = ""
     if args.no_serial_test:
         out = "test serial input - static"
     else:
         out = ser.readline()
-    if args.debug:
-        print out
     out = re.split('\\n|\\r', out)[0]
+    if args.debug:
+        print("Got line from serial interface: " + str(out))
     p = out.strip().split('|')
     if args.debug:
+        print("Parsed data: ")
         print(p)
 
+    data = {}
     try:
-        data = {}
-        data['payload'] = str(p[0]).replace(' ', '')
-        data['rssi'] = int(p[1])
+        data['payload'] = str(p[1]).replace(' ', '')
     except Exception as e:
-        print(str(e) + ": " + out)
+        print(str(e) + " while processing p[1] (payload):")
+        print(p[0])
         continue
+
+    try:
+        data['rssi'] = int(p[2])
+    except Exception as e:
+        print(str(e) + " while processing p[2] (rssi):")
+        print(p[1])
+        continue
+
+    data['node_id'] = 6
 
     if args.verbose:
         pprint(data)

@@ -16,7 +16,7 @@ parser.add_argument('-f', '--force',   action='store_true',
                                        help="Force re-creation of database - this will delete the old database!")
 args = parser.parse_args()
 
-db_file_path = '/tmp/env_monitoring.db'
+db_file_path = '/var/lib/env_monitoring.sqlite'
 
 try:
     os.remove(db_file_path)
@@ -34,7 +34,7 @@ if not os.path.exists(path):
 conn = sqlite3.connect(db_file_path)
 c = conn.cursor()
 print "Creating main data buffer table"
-c.execute('''CREATE TABLE data (timestamp integer, source integer, gateway_serial text, payload text, state integer)''')
+c.execute('''CREATE TABLE data (timestamp integer, source integer, gateway_serial text, payload text, state integer, rssi integer, node_id integer)''')
 print "Adding indexes"
 c.execute('''CREATE UNIQUE INDEX IF NOT EXISTS datapoint ON data ( timestamp, payload )''')
 c.execute('''CREATE INDEX IF NOT EXISTS state ON data ( state )''')
