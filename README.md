@@ -4,7 +4,7 @@ LoRa gateway based on Raspberry PI and custom RFM2PI LoRa module
 # installation
 
 
-    apt-get git vim python-pip
+    apt-get install git vim python-pip
     pip install tendo
     pip install pyserial
     cd /opt
