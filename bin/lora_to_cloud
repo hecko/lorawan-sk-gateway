@@ -21,7 +21,7 @@ sys.path.append(os.path.dirname(sys.argv[0]) + '/../lib')
 
 me = singleton.SingleInstance()
 
-parser = argparse.ArgumentParser(description = 'Serial to cloud middleware.')
+parser = argparse.ArgumentParser(description = 'Serial to cloud middleware via RabbitMQ.')
 parser.add_argument('-v', '--verbose', action='store_true', help="Be verbose")
 args = parser.parse_args()
 

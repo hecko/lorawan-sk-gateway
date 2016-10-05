@@ -14,7 +14,7 @@ sys.path.append(os.path.dirname(sys.argv[0]) + '/../lib')
 
 me = singleton.SingleInstance()
 
-parser = argparse.ArgumentParser(description = 'Process SQLite database and send data to cloud.')
+parser = argparse.ArgumentParser(description = 'Process SQLite database and send data to cloud using HTTP REST API')
 parser.add_argument('-v', '--verbose', action='store_true', help="Be verbose")
 args = parser.parse_args()
 
